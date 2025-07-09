@@ -19,54 +19,52 @@ Container_Boundary(bankSys, "IT-система банка Стандарт") {
 '  services
     Container(apiGateway, "API-шлюз", "Nginx", "")
     Container(internetBank, "Интернет-банк", "ASP.NET MVC", "Открытие депозитов и накопительных счетов")
-    Container(bankMainframe, "АБС", "Delphi", "Основная система, выполняющая банковские операции")
+    Container(bankMainframeClient, "Десктопный клиент АБС", "Delphi", "Основная система, выполняющая банковские операции")
     Container(webSite, "Сайт банка", "React.js, PHP", "Текущие ставки по депозитам и форма для заявки")
     Container(smsGate, "СМС-шлюз", "", "Отправка СМС")
-
     Container(ratesService, "Сервис ставок", "PHP", "Расчет ставок в зависимости ставки рефинансирования и количество кредитов и депозитов в банке")
     Container(productService, "Сервис продуктов (депозитов)", "PHP", "Управление продуктом Депозит и его параметрами")
-    Container(appliactionService, "Сервис заявок", "PHP", "Управление процессом подачи и обработки заявок на открытие депозита")
+    Container(applicationService, "Сервис заявок", "PHP", "Управление процессом подачи и обработки заявок на открытие депозита")
 '  databases
     ContainerDb(bankMainframeDB, "БД АБС", "Oracle", "")
     ContainerDb(internetBankDB, "БД интернет-банка", "MS SQL", "")
     ContainerDb(ratesServiceDB, "БД cервиса ставок", "PostgreSQL", "")
     ContainerDb(productServiceDB, "БД сервиса продуктов", "PostgreSQL", "")
-    ContainerDb(appliactionServiceDB, "БД сервиса заявок", "PostgreSQL", "")
-
-'  Container(WebApp, "Web Application", "JavaScript, React", "Handles user interactions")
-''  services
-'  Container(UserService, "User Management Service", "Go", "Manages users")
-'  Container(SensorService, "Sensor Management Service", "Go", "Manages sensors")
-'  Container(TelemetryService, "Telemetry Monitoring Service", "Go", "Monitors and stores telemetry")
-''  databases
-'  ContainerDb(TelemetryDatabase, "Telemetry Database", "PostgreSQL", "Stores telemetry data")
-''  topics
-'  ContainerQueue(SensorControlTopic, "Sensor Control Topic", "MQTT")
-'  ContainerQueue(SensorStateTopic, "Sensor State Topic", "MQTT")
-'  ContainerQueue(SensorTelemetryTopic, "Sensor Telemetry Topic", "MQTT")
-'  ContainerQueue(ServiceStateTopic, "Service State Topic", "MQTT")
-'  ContainerQueue(ServiceTelemetryTopic, "Service Telemetry Topic", "MQTT")
+    ContainerDb(applicationServiceDB, "БД сервиса заявок", "PostgreSQL", "")
+'  topics
+  ContainerQueue(smsTopic, "Топик СМС", "Kafka")
+  ContainerQueue(applicationTopic, "Топик заявок", "Kafka")
 }
 
-Rel(client, webSite, "Выбор депозита, создание заявки, подтверждение заявки")
-Rel(client, internetBank, "Выбор депозита, создание заявки")
-Rel(internetBank, smsGate, "СМС-подтверждение")
-Rel(internetBank, bankMainframe, "Получение ставок, Заявка на депозит")
-Rel(webSite, bankMainframe, "Получение ставок")
-Rel(webSite, callCentreSys, "Заявка на обратный звонок")
-Rel(callCentreEmp, callCentreSys, "Обработка заявок, внесение подтвержденных условий")
-Rel(client, callCentreEmp, "Подтверждение условий депозита")
-Rel(callCentreSys, bankMainframe, "Заявка на депозит")
-Rel(depositBackOffice, bankMainframe, "Подтверждение заявки на депозит")
-Rel(bankMainframe, smsGate, "СМС-уведомление")
+Rel(client, webSite, "Выбирает депозит, создает заявку, подтверждает заявку")
+Rel(webSite, apiGateway, "Получает данные по продуктам и ставкам")
+Rel(webSite, callCentreSys, "Создает заявку на обратный звонок")
+Rel(callCentreEmp, callCentreSys, "Обработывает заявки на звонок, создает заявки на депозит")
+Rel(callCentreSys, applicationTopic, "Посылает заявку на депозит")
+Rel(applicationService, applicationTopic, "Получает заявку на депозит")
+Rel(depositBackOffice, bankMainframeClient, "Подтверждает заявки на депозит")
+Rel(bankMainframeClient, apiGateway, "Управляет продуктами, ставками и заявками на депозит")
+Rel(applicationService, smsTopic, "Посылает СМС")
+Rel(frontOffice, bankMainframeClient, "Создает депозит, оформляет документы")
+
+Rel(client, internetBank, "Выбирает депозит, создает заявку, подтверждает заявку")
+Rel(internetBank, apiGateway, "Получает данные по продуктам и ставкам, создает заявки")
+
+Rel(apiGateway, smsGate, "Маршрутизирует запросы")
+Rel(apiGateway, ratesService, "Маршрутизирует запросы")
+Rel(apiGateway, productService, "Маршрутизирует запросы")
+Rel(apiGateway, applicationService, "Маршрутизирует запросы")
+
+Rel(smsGate, smsTopic, "Получает СМС")
 Rel(smsGate, telecomOperator, "СМС-сообщение")
 Rel(telecomOperator, client, "СМС-сообщение")
-Rel(client, frontOffice, "Обращение в отдедение")
-Rel(frontOffice, bankMainframe, "Создание депозита, оформление документов")
-Rel(creditBackOffice, bankMainframe, "Информация о ставке рефинансирования")
-Rel(bankMainframe, bankMainframe, "Расчет ставок по депозитам")
 
-Rel(bankMainframe, bankMainframeDB, "Читает/пишет данные")
+Rel(creditBackOffice, bankMainframeClient, "Рассчитывает ставки по депозитам")
+
+Rel(bankMainframeClient, bankMainframeDB, "Читает/пишет данные")
 Rel(internetBank, internetBankDB, "Читает/пишет данные")
+Rel(ratesService, ratesServiceDB, "Читает/пишет данные")
+Rel(productService, productServiceDB, "Читает/пишет данные")
+Rel(applicationService, applicationServiceDB, "Читает/пишет данные")
 
 @enduml
