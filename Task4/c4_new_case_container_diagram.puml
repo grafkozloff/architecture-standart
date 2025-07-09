@@ -5,15 +5,17 @@ top to bottom direction
 
 !includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
 
-Person_Ext(client, "Bank client", "")
+Person(client, "Bank client", "")
 Person(callCentreEmp, "Call-centre employee", "")
 Person(depositBackOfficer, "Desposit back officer", "")
 Person(creditBackOfficer, "Credit back officer", "")
 Person(frontOfficer, "Front officer", "")
+Person_Ext(partnerCallCentreEmp, "Partner call-centre employee", "")
 
 System(bankSys, "Standart IT-system")
 System(callCentreSys, "Call-centre system", "")
 System_Ext(telecomOperator, "Telecom operator", "External telecom provider for SMS")
+System_Ext(partnerCallCentreSys, "Partner call-centre system", "")
 
 Container_Boundary(bankSys, "Standart IT-system") {
 '  services
@@ -25,6 +27,7 @@ Container_Boundary(bankSys, "Standart IT-system") {
     Container(rateService, "Rate service", "PHP", "Rates managing")
     Container(productService, "Product (deposits) service", "PHP", "Product managing")
     Container(applicationService, "Application service", "PHP", "Application managing")
+    Container(sftpServer, "SFTP server", "", "Stores files with rates")
 '  databases
     ContainerDb(absDB, "ABS database", "Oracle", "Contains core banking business logic")
     ContainerDb(internetBankDB, "Internet banking system database", "MS SQL", "")
@@ -37,7 +40,7 @@ Container_Boundary(bankSys, "Standart IT-system") {
 }
 
 Rel(client, website, "Selects deposit, applies to deposit")
-Rel(website, apiGateway, "Gets product and rate data")
+Rel(website, apiGateway, "Gets data on products and rates")
 Rel(website, callCentreSys, "Creates request for call-back")
 Rel(callCentreEmp, callCentreSys, "Processes calls, creates deposit applications")
 Rel(callCentreSys, applicationTopic, "Sends desposit application")
@@ -48,7 +51,7 @@ Rel(applicationService, smsTopic, "Sends SMS")
 Rel(frontOfficer, absClient, "Creates deposits, does paperwork")
 
 Rel(client, internetBank, "Selects deposit, applies to deposit, confirms application")
-Rel(internetBank, apiGateway, "Gets product and rate data, creates deposit applications")
+Rel(internetBank, apiGateway, "Gets data on products and rates, creates deposit applications")
 
 Rel(apiGateway, smsGate, "Routes requests")
 Rel(apiGateway, rateService, "Routes requests")
@@ -66,5 +69,12 @@ Rel(internetBank, internetBankDB, "Reads/writes data")
 Rel(rateService, rateServiceDB, "Reads/writes data")
 Rel(productService, productServiceDB, "Reads/writes data")
 Rel(applicationService, applicationServiceDB, "Reads/writes data")
+
+Rel(callCentreSys, apiGateway, "Gets product and rate data")
+Rel(rateService, sftpServer, "Uploads files with rates")
+Rel(partnerCallCentreEmp, partnerCallCentreSys, "Processes calls")
+Rel(partnerCallCentreEmp, sftpServer, "Retrieves files with rates")
+
+callCentreEmp --[hidden]-> partnerCallCentreEmp
 
 @enduml
