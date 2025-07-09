@@ -1,0 +1,70 @@
+@startuml
+title Bank Standart container diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(client, "Bank client", "")
+Person(callCentreEmp, "Call-centre employee", "")
+Person(depositBackOfficer, "Desposit back officer", "")
+Person(creditBackOfficer, "Credit back officer", "")
+Person(frontOfficer, "Front officer", "")
+
+System(bankSys, "Standart IT-system")
+System(callCentreSys, "Call-centre system", "")
+System_Ext(telecomOperator, "Telecom operator", "External telecom provider for SMS")
+
+Container_Boundary(bankSys, "Standart IT-system") {
+'  services
+    Container(apiGateway, "API Gateway", "Nginx", "")
+    Container(internetBank, "Internet banking system", "ASP.NET MVC", "Opening of deposits")
+    Container(absClient, "ABS desktop client", "Delphi", "Client application for ABS")
+    Container(website, "Bank website", "React.js, PHP", "Desposit rates and call-back application")
+    Container(smsGate, "SMS gate", "", "SMS sending")
+    Container(ratesService, "Rates service", "PHP", "Rates managing")
+    Container(productService, "Product (deposits) service", "PHP", "Product managing")
+    Container(applicationService, "Application service", "PHP", "Application managing")
+'  databases
+    ContainerDb(absDB, "ABS database", "Oracle", "Contains core banking business logic")
+    ContainerDb(internetBankDB, "Internet banking system database", "MS SQL", "")
+    ContainerDb(ratesServiceDB, "Rates service database", "PostgreSQL", "")
+    ContainerDb(productServiceDB, "Product service database", "PostgreSQL", "")
+    ContainerDb(applicationServiceDB, "Application service database", "PostgreSQL", "")
+'  topics
+  ContainerQueue(smsTopic, "SMS topic", "Kafka")
+  ContainerQueue(applicationTopic, "Application topic", "Kafka")
+}
+
+Rel(client, website, "Selects deposit, applies to deposit")
+Rel(website, apiGateway, "Gets data on products and rates")
+Rel(website, callCentreSys, "Creates request for call-back")
+Rel(callCentreEmp, callCentreSys, "Processes call-back requests, creates deposit applications")
+Rel(callCentreSys, applicationTopic, "Sends desposit application")
+Rel(applicationService, applicationTopic, "Receives deposit application")
+Rel(depositBackOfficer, absClient, "Confirms deposit applications")
+Rel(absClient, apiGateway, "Manages products, rates and deposit applications")
+Rel(applicationService, smsTopic, "Sends SMS")
+Rel(frontOfficer, absClient, "Creates deposits, does paperwork")
+
+Rel(client, internetBank, "Selects deposit, applies to deposit, confirms application")
+Rel(internetBank, apiGateway, "Gets data on products and rates, creates deposit applications")
+
+Rel(apiGateway, smsGate, "Routes requests")
+Rel(apiGateway, ratesService, "Routes requests")
+Rel(apiGateway, productService, "Routes requests")
+Rel(apiGateway, applicationService, "Routes requests")
+
+Rel(smsGate, smsTopic, "Receives SMS")
+Rel(smsGate, telecomOperator, "Sends SMS")
+Rel(client, telecomOperator, "Receives SMS")
+
+Rel(creditBackOfficer, absClient, "Manages rates")
+
+Rel(absClient, absDB, "Reads/writes data")
+Rel(internetBank, internetBankDB, "Reads/writes data")
+Rel(ratesService, ratesServiceDB, "Reads/writes data")
+Rel(productService, productServiceDB, "Reads/writes data")
+Rel(applicationService, applicationServiceDB, "Reads/writes data")
+
+@enduml
