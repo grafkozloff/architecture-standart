@@ -1,0 +1,28 @@
+@startuml
+title Bank Standart context diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person_Ext(client, "Bank client", "")
+Person(callCentreEmp, "Call-centre employee", "")
+Person(depositBackOfficer, "Desposit back officer", "")
+Person(creditBackOfficer, "Credit back officer", "")
+Person(frontOfficer, "Front officer", "")
+
+System(bankSys, "Standart IT-system", "Includes website, internet banking system, ABS, SMS gate and other services")
+System(callCentreSys, "Call-centre system", "")
+
+System_Ext(telecomOperator, "Telecom operator", "External telecom provider for SMS")
+
+Rel(client, bankSys, "Selects deposit, applies to deposit, confirms application")
+Rel(callCentreEmp, callCentreSys, "Processes calls, creates deposit applications")
+Rel(callCentreSys, bankSys, "Creates deposit applications")
+Rel(depositBackOfficer, bankSys, "Confirms deposit applications")
+Rel(bankSys, telecomOperator, "Sends SMS")
+Rel(client, telecomOperator, "Receives SMS")
+Rel(frontOfficer, bankSys, "Creates deposits, does paperwork")
+Rel(creditBackOfficer, bankSys, "Manages rates")
+
+@enduml
